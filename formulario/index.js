@@ -2,6 +2,7 @@ const formulario = document.getElementById('formulario');
 const tabelaCadastrados = document.getElementById('tabelaCadastrados');
 
 popularTabelaAoCarregarPagina();
+adicionarEventosDosBotoesDeExclusao();
 
 formulario.addEventListener('submit', (evento) =>{
     evento.preventDefault();
@@ -10,11 +11,23 @@ formulario.addEventListener('submit', (evento) =>{
     let data = $('#formulario').serializeArray();
     let registro = arrayToObject(data);
 
-    adicionarRegistroNaTabela(registro);
+    let clientesCadastrados = JSON.parse(localStorage.getItem('clientes')) || []
+    
+    let usuarioDuplicado = clientesCadastrados
+        .map(clienteCadastrado => (JSON.parse(clienteCadastrado)).nomeDeUsuario)
+        .includes(registro.nomeDeUsuario);
+    
+    if (usuarioDuplicado) {
+        alert(`O nome de usuario ${registro.nomeDeUsuario} ja existe, escolha um nome novo!`);
+        return;
+    }
+      
 
-    let clientes = JSON.parse(localStorage.getItem('clientes')) || [];
-    clientes.push(JSON.stringify(registro));
-    localStorage.setItem('clientes', JSON.stringify(clientes))   
+
+    clientesCadastrados.push(JSON.stringify(registro));
+    localStorage.setItem('clientes', JSON.stringify(clientesCadastrados))   
+    adicionarRegistroNaTabela(registro);
+    adicionarEventosDosBotoesDeExclusao();
 });
 
 function arrayToObject(array) {
@@ -36,6 +49,11 @@ function adicionarRegistroNaTabela(registro) {
             <td>${registro.cidade}</td>
             <td>${registro.estado}</td>
             <td>${registro.cep}</td>   
+            <td>
+                <button class = "btn btn-outline-danger exclusao" data-usuario = "${registro.nomeDeUsuario}">
+                Excluir
+                </button>
+            </td>
 
         </tr>
 
@@ -52,5 +70,42 @@ function popularTabelaAoCarregarPagina(params) {
     })
 }
 
+function adicionarEventosDosBotoesDeExclusao() {
     
+    $('.exclusao').toArray().forEach(botadoDeExclusao => {
+        botadoDeExclusao.removeEventListener('click', (evento) => excluirRegistro(evento))
+    })
+
+    $('.exclusao').toArray().forEach(botadoDeExclusao => {
+        botadoDeExclusao.addEventListener('click', (evento) => excluirRegistro(evento))
+    })
+
+    function excluirRegistro(evento) {
+        let cadastroQueSeraExcluido = evento.target.dataset.usuario;
+        
+        if (confirm(`Tem certeza que deseja excluir ${cadastroQueSeraExcluido}`)) {
+            
+            let registros = JSON.parse(localStorage.getItem('clientes')) || [];
+
+            registros = registros.map(registro => JSON.parse(registro));
+            
+            let index = registros.findIndex(registro => registro.nomeDeUsuario == cadastroQueSeraExcluido);
+            
+            registros.splice(index, 1);
+
+            registros = registros.map(registro => JSON.stringify(registro));
+            localStorage.setItem('clientes', JSON.stringify(registros));
+            document.location.reload(true);
+
+        }
+    }
+
+
+
+
+
+
+
+
+}
     
